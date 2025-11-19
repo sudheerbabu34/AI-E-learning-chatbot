@@ -1,0 +1,508 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Learning Assistant</title>
+  <style>
+    :root {
+      --primary: #87CEEB;     /* Soft Blue */
+      --secondary: #FFC5C5;   /* Pastel Pink */
+      --accent: #032B44;      /* Deep Navy Blue */
+      --bg: #F7F7F7;          /* Creamy White */
+      --card: #FFFFFF;        /* White card */
+      --text: #032B44;        /* Use Deep Navy for readability */
+      --muted: #4C6B80;       /* Muted navy */
+      --border: #CFEAF6;      /* Light blue border */
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background: var(--bg);
+    }
+    header {
+      padding: 2rem 1rem;
+      text-align: center;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: var(--accent);
+    }
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1rem 3rem;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem;
+      box-shadow: 0 10px 30px rgba(3,43,68,0.08);
+    }
+    .button-group {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+    .btn {
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: linear-gradient(135deg, rgba(135,206,235,0.35), rgba(255,197,197,0.25));
+      color: var(--accent);
+      cursor: pointer;
+      font-weight: 600;
+      transition: transform 0.12s ease, background 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 4px 14px rgba(3,43,68,0.08);
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn.active { background: linear-gradient(135deg, var(--primary), var(--secondary)); box-shadow: 0 8px 20px rgba(3,43,68,0.12); }
+    .input-section { display: none; }
+    .input-section.active { display: block; }
+    .input, input[type="file"] {
+      width: 100%;
+      padding: 0.75rem 0.9rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: var(--accent);
+      outline: none;
+    }
+    .primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); border: none; color: var(--accent); font-weight: 700; }
+    .danger { background: linear-gradient(135deg, #ef4444, #f87171); border: none; color: white; font-weight: 700; }
+    .muted { color: var(--muted); font-size: 0.9rem; }
+    .answer { white-space: pre-wrap; background: #ffffff; padding: 0.75rem; border-radius: 10px; border: 1px solid var(--border); color: var(--accent); }
+    .quiz { margin-top: 1rem; }
+    .question { margin: 0.6rem 0; font-weight: 700; }
+    .options { display: grid; gap: 0.5rem; margin-bottom: 0.75rem; }
+    .option {
+      padding: 0.6rem 0.8rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      cursor: pointer;
+    }
+    .option.selected { outline: 2px solid var(--primary); }
+    .option.correct { background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.5); }
+    .option.incorrect { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.5); }
+    .footer-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+    @media (max-width: 700px) { .button-group { grid-template-columns: 1fr; } }
+
+    /* Mic indicator */
+    .mic-banner {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      margin-top: .6rem;
+      padding: .6rem .8rem;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: var(--accent);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-weight: 700;
+    }
+    .mic-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 0 rgba(3,43,68, 0.6);
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(3,43,68, 0.6); }
+      70% { box-shadow: 0 0 0 12px rgba(3,43,68, 0.0); }
+      100% { box-shadow: 0 0 0 0 rgba(3,43,68, 0.0); }
+    }
+    #sectionVoice.mic-on { outline: 2px dashed var(--accent); outline-offset: 6px; border-radius: 12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🎓 AI Learning Assistant</h1>
+  </header>
+  <main>
+    <div class="card">
+      <div class="button-group">
+        <button class="btn" id="btnText">Text to Text</button>
+        <button class="btn" id="btnVoice">Voice to Text</button>
+        <button class="btn" id="btnImage">Visual Q&A</button>
+      </div>
+
+      <div id="sectionText" class="input-section active">
+        <input class="input" type="text" id="textInput" placeholder="Type your question" />
+        <div class="footer-actions" style="margin-top: .6rem;">
+          <button class="btn primary" onclick="askText()">Ask</button>
+        </div>
+        <div class="answer" id="textAnswer" style="margin-top: .6rem; display: none;"></div>
+        <div class="footer-actions" style="margin-top: .6rem; display: none;" id="textQuizBtn">
+          <button class="btn primary" onclick="startQuizFromText()">Start Quiz</button>
+        </div>
+      </div>
+
+      <div id="sectionVoice" class="input-section">
+        <p class="muted">Use your microphone to ask a question. Click Start, speak, then Stop.</p>
+        <div class="footer-actions" style="margin-top: .6rem;">
+          <button class="btn primary" id="startMicBtn">Start Mic</button>
+          <button class="btn" id="stopMicBtn" disabled>Stop</button>
+        </div>
+        <div id="micBanner" class="mic-banner"><span class="mic-dot"></span><span>Mic On — Listening...</span></div>
+        <div id="voiceStatus" class="muted" style="margin-top:.6rem;">Idle</div>
+        <div id="voiceTranscription" class="answer" style="margin-top: .6rem;"></div>
+        <div class="answer" id="voiceAnswer" style="margin-top: .6rem; display: none;"></div>
+        <div class="footer-actions" style="margin-top: .6rem; display: none;" id="voiceQuizBtn">
+          <button class="btn primary" onclick="startQuizFromVoice()">Start Quiz</button>
+        </div>
+      </div>
+
+      <div id="sectionImage" class="input-section">
+        <input type="file" id="imageFile" accept="image/*" />
+        <input class="input" type="text" id="imagePrompt" placeholder="Enter prompt for image" style="margin-top: .6rem;" />
+        <div class="footer-actions" style="margin-top: .6rem;">
+          <button class="btn primary" onclick="askImage()">Ask</button>
+        </div>
+        <div class="answer" id="imageAnswer" style="margin-top: .6rem; display: none;"></div>
+        <div class="footer-actions" style="margin-top: .6rem; display: none;" id="imageQuizBtn">
+          <button class="btn primary" onclick="startQuizFromImage()">Start Quiz</button>
+        </div>
+      </div>
+
+      <div id="quizArea" class="quiz" style="display: none;">
+        <h3 style="margin: .2rem 0 .2rem 0;">Quiz</h3>
+        <div id="quizContainer"></div>
+        <div class="footer-actions">
+          <button class="btn primary" id="submitQuizBtn">Submit Quiz</button>
+          <button class="btn" id="resetQuizBtn">Reset</button>
+        </div>
+        <div id="quizResult" class="answer" style="margin-top: .6rem;"></div>
+      </div>
+    </div>
+  </main>
+  <script>
+    const btnText = document.getElementById('btnText');
+    const btnVoice = document.getElementById('btnVoice');
+    const btnImage = document.getElementById('btnImage');
+    const sectionText = document.getElementById('sectionText');
+    const sectionVoice = document.getElementById('sectionVoice');
+    const sectionImage = document.getElementById('sectionImage');
+
+    const textAnswer = document.getElementById('textAnswer');
+    const textQuizBtn = document.getElementById('textQuizBtn');
+    const voiceAnswer = document.getElementById('voiceAnswer');
+    const voiceQuizBtn = document.getElementById('voiceQuizBtn');
+    const imageAnswer = document.getElementById('imageAnswer');
+    const imageQuizBtn = document.getElementById('imageQuizBtn');
+    const quizArea = document.getElementById('quizArea');
+    const quizContainer = document.getElementById('quizContainer');
+    const submitQuizBtn = document.getElementById('submitQuizBtn');
+    const resetQuizBtn = document.getElementById('resetQuizBtn');
+    const quizResult = document.getElementById('quizResult');
+    // Voice (mic) elements
+    const startMicBtn = document.getElementById('startMicBtn');
+    const stopMicBtn = document.getElementById('stopMicBtn');
+    const voiceStatus = document.getElementById('voiceStatus');
+    const voiceTranscription = document.getElementById('voiceTranscription');
+    const micBanner = document.getElementById('micBanner');
+
+    let lastContent = '';
+    let quizData = null;
+    let selections = {};
+    let recognition = null;
+    let isRecognizing = false;
+    let fullTranscript = '';
+    // Initialize mic button states
+    startMicBtn.disabled = false;
+    stopMicBtn.disabled = true;
+
+    // Check browser support
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      voiceStatus.textContent = 'Speech recognition not supported in this browser.';
+      startMicBtn.disabled = true;
+    }
+
+    function hideAll() {
+      sectionText.classList.remove('active');
+      sectionVoice.classList.remove('active');
+      sectionImage.classList.remove('active');
+      btnText.classList.remove('active');
+      btnVoice.classList.remove('active');
+      btnImage.classList.remove('active');
+    }
+
+    btnText.onclick = () => { 
+      hideAll(); 
+      sectionText.classList.add('active'); 
+      btnText.classList.add('active');
+    };
+    btnVoice.onclick = () => {
+      hideAll();
+      sectionVoice.classList.add('active');
+      btnVoice.classList.add('active');
+      voiceStatus.textContent = 'Mic ready. Click Start to speak.';
+      voiceTranscription.textContent = '';
+    };
+    btnImage.onclick = () => { 
+      hideAll(); 
+      sectionImage.classList.add('active'); 
+      btnImage.classList.add('active');
+    };
+
+    function hideQuiz() {
+      quizArea.style.display = 'none';
+      quizResult.textContent = '';
+    }
+
+    async function askText() {
+      const question = document.getElementById('textInput').value;
+      if (!question.trim()) {
+        alert('Please enter a question');
+        return;
+      }
+      textAnswer.textContent = 'Loading...';
+      textAnswer.style.display = 'block';
+      textQuizBtn.style.display = 'none';
+      const formData = new FormData();
+      formData.append('question', question);
+      const res = await fetch('/ask', { method: 'POST', body: formData });
+      const data = await res.json();
+      textAnswer.textContent = data.answer;
+      lastContent = data.answer;
+      textQuizBtn.style.display = 'flex';
+      hideQuiz();
+    }
+
+    async function askVoice() {
+      // Deprecated: File upload flow removed in favor of mic recognition
+      alert('Microphone mode is enabled. Use Start/Stop to speak.');
+    }
+
+    async function askImage() {
+      const imageFile = document.getElementById('imageFile').files[0];
+      const prompt = document.getElementById('imagePrompt').value;
+      if (!imageFile || !prompt.trim()) {
+        alert('Please upload an image and enter a prompt');
+        return;
+      }
+      imageAnswer.textContent = 'Loading...';
+      imageAnswer.style.display = 'block';
+      imageQuizBtn.style.display = 'none';
+      const formData = new FormData();
+      formData.append('image', imageFile);
+      formData.append('prompt', prompt);
+      const res = await fetch('/ask_image', { method: 'POST', body: formData });
+      const data = await res.json();
+      imageAnswer.textContent = data.answer;
+      lastContent = data.answer;
+      imageQuizBtn.style.display = 'flex';
+      hideQuiz();
+    }
+
+    function startQuizFromText() {
+      startQuiz();
+    }
+    
+    function startQuizFromVoice() {
+      startQuiz();
+    }
+    
+    function startQuizFromImage() {
+      startQuiz();
+    }
+
+    async function startQuiz() {
+      if (!lastContent) return;
+      const formData = new FormData();
+      formData.append('content', lastContent);
+      const res = await fetch('/generate_quiz', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data && Array.isArray(data.questions) && data.questions.length > 0) {
+        quizData = data;
+        renderQuiz();
+      } else {
+        quizData = null;
+        quizArea.style.display = 'block';
+        quizContainer.innerHTML = `<div class="muted">${data && data.error ? data.error : 'Could not parse quiz. Please try again.'}</div>`;
+        quizResult.textContent = '';
+      }
+    }
+
+    function renderQuiz() {
+      quizContainer.innerHTML = '';
+      quizResult.textContent = '';
+      selections = {};
+      if (!quizData) {
+        quizContainer.innerHTML = '<div class="muted">Could not parse quiz. Please try again.</div>';
+        quizArea.style.display = 'block';
+        return;
+      }
+      quizArea.style.display = 'block';
+      quizData.questions.forEach((q, idx) => {
+        const wrapper = document.createElement('div');
+        const qEl = document.createElement('div');
+        qEl.className = 'question';
+        qEl.textContent = `${idx + 1}. ${q.question}`;
+        const opts = document.createElement('div');
+        opts.className = 'options';
+        for (const key of ['A','B','C','D']) {
+          const opt = document.createElement('div');
+          opt.className = 'option';
+          opt.dataset.key = key;
+          opt.textContent = `${key}. ${q.options[key]}`;
+          opt.addEventListener('click', () => {
+            Array.from(opts.children).forEach(c => c.classList.remove('selected'));
+            opt.classList.add('selected');
+            selections[idx] = key;
+          });
+          opts.appendChild(opt);
+        }
+        wrapper.appendChild(qEl);
+        wrapper.appendChild(opts);
+        quizContainer.appendChild(wrapper);
+      });
+    }
+
+    submitQuizBtn.addEventListener('click', () => {
+      if (!quizData) return;
+      let score = 0;
+      quizData.questions.forEach((q, idx) => {
+        const group = quizContainer.children[idx].querySelector('.options');
+        const chosen = selections[idx];
+        const correct = q.correct;
+        Array.from(group.children).forEach(opt => {
+          const key = opt.dataset.key;
+          if (key === correct) opt.classList.add('correct');
+          if (chosen && key === chosen && chosen !== correct) opt.classList.add('incorrect');
+        });
+        if (chosen === correct) score += 1;
+      });
+      quizResult.textContent = `Your score: ${score} / ${quizData.questions.length}`;
+    });
+
+    resetQuizBtn.addEventListener('click', () => {
+      if (quizData) renderQuiz();
+      quizResult.textContent = '';
+    });
+
+    // ========== Microphone Functions ==========
+    startMicBtn.addEventListener('click', () => {
+      if (!SpeechRecognition) {
+        alert('Speech recognition is not supported in your browser.');
+        return;
+      }
+
+      // Initialize recognition
+      recognition = new SpeechRecognition();
+      recognition.continuous = true; // Keep listening
+      recognition.interimResults = true; // Show results as you speak
+      recognition.lang = 'en-US';
+      recognition.maxAlternatives = 1;
+
+      fullTranscript = '';
+      voiceTranscription.textContent = '';
+
+      recognition.onstart = () => {
+        isRecognizing = true;
+        startMicBtn.disabled = true;
+        stopMicBtn.disabled = false;
+        voiceStatus.textContent = '🎤 Listening...';
+        micBanner.style.display = 'flex';
+        sectionVoice.classList.add('mic-on');
+      };
+
+      recognition.onresult = (event) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript + ' ';
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        if (finalTranscript) {
+          fullTranscript += finalTranscript;
+        }
+
+        // Display the text in real-time
+        voiceTranscription.textContent = fullTranscript + interimTranscript;
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        voiceStatus.textContent = `Error: ${event.error}`;
+        stopMicRecording();
+      };
+
+      recognition.onend = () => {
+        if (isRecognizing) {
+          // Restart if still supposed to be recognizing
+          recognition.start();
+        }
+      };
+
+      recognition.start();
+    });
+
+    stopMicBtn.addEventListener('click', async () => {
+      stopMicRecording();
+
+      if (fullTranscript.trim()) {
+        voiceStatus.textContent = '⏳ Processing your question...';
+
+        try {
+          // Send the transcription to the backend
+          voiceAnswer.textContent = 'Loading...';
+          voiceAnswer.style.display = 'block';
+          voiceQuizBtn.style.display = 'none';
+          const formData = new FormData();
+          formData.append('question', fullTranscript.trim());
+          const res = await fetch('/ask', { method: 'POST', body: formData });
+          const data = await res.json();
+          voiceStatus.textContent = '✅ Response received';
+          voiceAnswer.textContent = data.answer;
+          lastContent = data.answer;
+          voiceQuizBtn.style.display = 'flex';
+          hideQuiz();
+        } catch (error) {
+          voiceStatus.textContent = '❌ Error processing request';
+          voiceAnswer.textContent = 'Error: ' + error.message;
+        }
+      } else {
+        voiceStatus.textContent = 'No speech detected. Try again.';
+      }
+    });
+
+    function stopMicRecording() {
+      if (recognition) {
+        isRecognizing = false;
+        recognition.stop();
+      }
+      startMicBtn.disabled = false;
+      stopMicBtn.disabled = true;
+      micBanner.style.display = 'none';
+      sectionVoice.classList.remove('mic-on');
+      if (!fullTranscript.trim()) {
+        voiceStatus.textContent = 'Mic stopped. Click Start to speak again.';
+      }
+    }
+  </script>
+</body>
+</html>
